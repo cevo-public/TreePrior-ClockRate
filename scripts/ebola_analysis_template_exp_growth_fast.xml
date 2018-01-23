@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood" version="2.0">
+
+
+    <data
+		id="ebola"
+		name="alignment">
+
+    </data>
+
+
+    
+<map name="Uniform" >beast.math.distributions.Uniform</map>
+<map name="Exponential" >beast.math.distributions.Exponential</map>
+<map name="LogNormal" >beast.math.distributions.LogNormalDistributionModel</map>
+<map name="Normal" >beast.math.distributions.Normal</map>
+<map name="Beta" >beast.math.distributions.Beta</map>
+<map name="Gamma" >beast.math.distributions.Gamma</map>
+<map name="LaplaceDistribution" >beast.math.distributions.LaplaceDistribution</map>
+<map name="prior" >beast.math.distributions.Prior</map>
+<map name="InverseGamma" >beast.math.distributions.InverseGamma</map>
+<map name="OneOnX" >beast.math.distributions.OneOnX</map>
+
+<parameter id="growthRate.t:tree" name="RealParameter">4</parameter>
+
+<run id="mcmc" spec="MCMC" chainLength="{CHAIN_LENGTH_HOOK}">
+    <state id="state" storeEvery="-1">
+        <tree id="Tree.t:ebola" name="stateNode">
+            <trait id="dateTrait.t:ebola" spec="beast.evolution.tree.TraitSet" traitname="date">
+           		{DATES_HOOK}
+                <taxa id="TaxonSet.ebola" spec="TaxonSet">
+                    <alignment idref="ebola"/>
+                </taxa>
+            </trait>
+            <taxonset idref="TaxonSet.ebola"/>
+        </tree>
+        <parameter id="clockRate.c:ebola" name="stateNode">1.0</parameter>
+        <parameter id="popSize.t:ebola" name="stateNode">10</parameter>        
+    </state>
+
+    <init id="RandomTree.t:ebola" spec="beast.evolution.tree.RandomTree" estimate="false" initial="@Tree.t:ebola" taxa="@ebola">
+        <populationModel id="ConstantPopulation0.t:ebola" spec="ConstantPopulation">
+            <parameter id="randomPopSize.t:ebola" name="popSize">1.0</parameter>
+        </populationModel>
+    </init>
+
+    <distribution id="posterior" spec="util.CompoundDistribution">
+        <distribution id="prior" spec="util.CompoundDistribution">
+            <distribution id="CoalescentExponential.t:tree" spec="Coalescent">
+                <populationModel id="ExponentialGrowth.t:ebola" spec="ExponentialGrowth" growthRate="@growthRate.t:tree" popSize="@popSize.t:ebola"/>
+                <treeIntervals id="TreeIntervals.t:tree" spec="TreeIntervals" tree="@Tree.t:ebola"/>
+            </distribution>
+            <prior id="ePopSizePrior.t:tree" name="distribution" x="@popSize.t:ebola">
+                <OneOnX id="OneOnX.0" name="distr"/>
+            </prior>
+            <!--prior id="GrowthRatePrior.t:tree" name="distribution" x="@growthRate.t:tree">
+                <Exponential id="GrowthRatePriorDistribution" name="distr">
+                    <parameter id="GrowthRateMean" estimate="false" name="mean">2</parameter>
+                </Exponential>
+            </prior-->
+            <prior id="ClockPrior.c:ebola" name="distribution" x="@clockRate.c:ebola">
+                <Normal id="Normal.0" name="distr">
+                    <parameter id="RealParameter.0" estimate="false" name="mean">{CLOCK_MEAN_HOOK}</parameter>
+                    <parameter id="RealParameter.01" estimate="false" name="sigma">{CLOCK_STDEV_HOOK}</parameter>
+                </Normal>
+            </prior>
+        </distribution>
+        <distribution id="likelihood" spec="util.CompoundDistribution">
+            <distribution id="treeLikelihood.ebola" spec="ThreadedTreeLikelihood" data="@ebola" tree="@Tree.t:ebola">
+                <siteModel id="SiteModel.s:ebola" spec="SiteModel" gammaCategoryCount="1">
+                    <parameter id="mutationRate.s:ebola" estimate="false" name="mutationRate">1.0</parameter>
+                    <parameter id="gammaShape.s:ebola" estimate="false" name="shape">1.0</parameter>
+                    <parameter id="proportionInvariant.s:ebola" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
+                    <substModel id="JC69.s:ebola" spec="JukesCantor"/>
+                </siteModel>
+                <branchRateModel id="StrictClock.c:ebola" spec="beast.evolution.branchratemodel.StrictClockModel" clock.rate="@clockRate.c:ebola"/>
+            </distribution>
+        </distribution>
+    </distribution>
+
+    <operator id="StrictClockRateScaler.c:ebola" spec="ScaleOperator" parameter="@clockRate.c:ebola" scaleFactor="0.75" weight="3.0"/>
+
+    <operator id="strictClockUpDownOperator.c:ebola" spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
+        <up idref="clockRate.c:ebola"/>
+        <down idref="Tree.t:ebola"/>
+    </operator>
+   
+    <operator id="CoalescentExponentialTreeScaler.t:tree" spec="ScaleOperator" scaleFactor="0.5" tree="@Tree.t:ebola" weight="3.0"/>
+
+    <operator id="CoalescentExponentialTreeRootScaler.t:tree" spec="ScaleOperator" rootOnly="true" scaleFactor="0.5" tree="@Tree.t:ebola" weight="3.0"/>
+
+    <operator id="CoalescentExponentialUniformOperator.t:tree" spec="Uniform" tree="@Tree.t:ebola" weight="30.0"/>
+
+    <operator id="CoalescentExponentialSubtreeSlide.t:tree" spec="SubtreeSlide" tree="@Tree.t:ebola" weight="15.0"/>
+
+    <operator id="CoalescentExponentialNarrow.t:tree" spec="Exchange" tree="@Tree.t:ebola" weight="15.0"/>
+
+    <operator id="CoalescentExponentialWide.t:tree" spec="Exchange" isNarrow="false" tree="@Tree.t:ebola" weight="3.0"/>
+
+    <operator id="CoalescentExponentialWilsonBalding.t:tree" spec="WilsonBalding" tree="@Tree.t:ebola" weight="3.0"/>
+
+    <operator id="PopSizeScaler.t:tree" spec="ScaleOperator" parameter="@popSize.t:ebola" scaleFactor="0.75" weight="3.0"/>
+
+    <!--operator id="GrowthRateRandomWalk.t:tree" spec="RealRandomWalkOperator" parameter="@growthRate.t:tree" weight="3.0" windowSize="1.0"/-->
+
+
+    <logger id="tracelog" fileName="{OUTPUT_LOG_HOOK}_$(n).log" logEvery="{LOG_FREQUENCY_HOOK}" model="@posterior" sanitiseHeaders="true" sort="smart">
+        <log idref="posterior"/>
+        <log idref="likelihood"/>
+        <log idref="prior"/>
+        <log idref="treeLikelihood.ebola"/>
+        <log id="treeHeight" spec="beast.evolution.tree.TreeHeightLogger" tree="@Tree.t:ebola"/>
+        <log id="treeLength" spec="multitypetree.util.TreeLengthLogger" tree="@Tree.t:ebola"/>
+        <log idref="clockRate.c:ebola"/>
+        <log idref="popSize.t:ebola"/>
+        <log idref="growthRate.t:tree"/>
+        <log idref="CoalescentExponential.t:tree"/>
+    </logger>
+
+    <logger id="screenlog" logEvery="10000">
+        <log idref="posterior"/>
+        <log id="ESS.0" spec="util.ESS" arg="@posterior"/>
+        <log idref="likelihood"/>
+        <log idref="prior"/>
+    </logger>
+
+    <logger id="treelog.t:ebola" fileName="{OUTPUT_TREE_HOOK}_$(n).trees" logEvery="{LOG_FREQUENCY_HOOK}" mode="tree">
+        <log id="TreeWithMetaDataLogger.t:ebola" spec="beast.evolution.tree.TreeWithMetaDataLogger" tree="@Tree.t:ebola"/>
+    </logger>
+
+</run>
+
+</beast>

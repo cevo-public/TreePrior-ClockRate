@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood:beast.core.parameter:beast.evolution.tree" version="2.0">
+
+<!--    :multitypetree.operators:multitypetree.util:master.beast:master.conditions-->
+    
+    <!-- specify the taxa -->
+    <data id="alignment" dataType="nucleotide">
+{TAXA_HOOK}
+    </data>
+
+    <!-- specify the tree -->
+    <tree IsLabelledNewick="true" id="tree" spec="beast.util.TreeParser" name="stateNode" taxa="@alignment" adjustTipHeights="false">
+        <input name="newick">
+{TREE_HOOK}
+        </input>
+    </tree>
+    
+    <!-- configure the Sequence Simulator -->
+<run spec="beast.app.seqgen.SequenceSimulator" id="seqgen" data="@alignment" tree="@tree" sequencelength="{SEQ_LENGTH_HOOK}" outputFileName="sequences.xml" iterations="{NUM_RUNS_HOOK}">
+    <merge spec='beast.app.seqgen.MergeDataWith' template='ebola_tmp.xml' output="{OUTPUT_HOOK}_$(n).xml"/>
+        <siteModel spec="SiteModel" id="siteModel" gammaCategoryCount="1">
+            <!--    <siteModel spec="SiteModel" id="siteModel" gammaCategoryCount="4"> -->
+            <!-- specify gamma shape parameter -->
+            <!--        <shape spec="parameter.RealParameter">1.0</shape> -->
+            <!-- use HKY substitution model -->
+            <!--<parameter name="mutationRate" id="mutationRate" value="[0.005]"/>   we can only estimate the substitution rate=clockRate * mutationRate, so specify only one of them (default for mutation Rate=1-->
+            <substModel spec="JukesCantor" id="jc69"/>
+        </siteModel>
+    
+        <!-- use a strict clock -->
+          <branchRateModel id="StrictClock" spec="beast.evolution.branchratemodel.StrictClockModel">
+<parameter dimension="1" id="clockRate" minordimension="1" name="clock.rate" value="{RATE_HOOK}"/>
+          </branchRateModel>
+    </run>
+
+</beast>
