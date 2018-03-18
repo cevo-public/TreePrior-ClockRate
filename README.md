@@ -10,7 +10,7 @@ This file is supposed to help anyone who is trying to reproduce the results in t
 - scales
 - reshape2
 - ape
-- treescape (deprecated)
+- treescape (deprecated, but superseded by treespace, with the same commands and functionality)
 - apTreeShape
 - laser (deprecated)
 
